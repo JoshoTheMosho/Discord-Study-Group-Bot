@@ -1,11 +1,14 @@
+import os
+import glob
 import discord
+
 from discord.ext import commands
 from discord.utils import get
-import os.path
-from os import path
-import glob
-import os
 from dotenv import load_dotenv
+
+#Load Config
+load_dotenv('.env')
+Token = os.getenv('BOT_TOKEN')
 
 intents = discord.Intents.default()
 intents.members = True
@@ -51,7 +54,7 @@ async def delete(ctx, groupName: str):
         
     authorID = ctx.message.author.id
 
-    if(path.exists('./UVic Engr Study Groups/' + groupName + '.txt')):
+    if(os.path.exists('./UVic Engr Study Groups/' + groupName + '.txt')):
         f = open(groupName + '.txt')
         #This is the owner of the group
         leadUser = f.readline()
@@ -86,22 +89,34 @@ async def list(ctx):
         
     #Gets a list of all text files in the global directory
     #TO ADD: Seperate directories for each guild -- Current plans are usage on a single server so this can wait for now
-    os.chdir(r'./UVic Engr Study Groups/')
-    myFiles = glob.glob('*.txt')
-    groups = [x[:-4] for x in myFiles]
-    groups = sorted(groups, key=str.casefold)
-    
-    embed=discord.Embed(title="Study Groups", description="", color=0xffffff)
 
-    allGroups = ''
-    
-    for x in groups:
-        allGroups += str(x) + ', '
-    
-    embed.add_field(name='Here is a full list of all study groups', value=allGroups[:-2], inline=False)
-    await ctx.message.author.send(embed=embed)
+    # If the file doesn't exist, print to the terminal and create the folder
+    try:
+        os.chdir(r'./UVic Engr Study Groups/')
+    except FileNotFoundError:
+        print("Creating Study Groups Folder...")
+        os.makedirs(r'./UVic Engr Study Groups/')
+        os.chdir(r'./UVic Engr Study Groups/')
 
-   
+    #Continue as normal
+    #Make sure there isn't something funky or an empty folder
+    try:
+        myFiles = glob.glob('*.txt')
+        groups = [x[:-4] for x in myFiles]
+        groups = sorted(groups, key=str.casefold)
+        
+        embed=discord.Embed(title="Study Groups", description="", color=0xffffff)
+
+        allGroups = ''
+    
+        for x in groups:
+            allGroups += str(x) + ', '
+        
+        embed.add_field(name='Here is a full list of all study groups', value=allGroups[:-2], inline=False)
+        await ctx.message.author.send(embed=embed)
+    except:
+        print("No groups/files inside folder")
+
 @bot.command()
 async def join(ctx, groupName: str):
     if ctx.message.channel.type is discord.ChannelType.private: 
@@ -109,7 +124,7 @@ async def join(ctx, groupName: str):
         
     authorID = ctx.message.author.id
 
-    if(path.exists('./UVic Engr Study Groups/' + groupName + '.txt')):
+    if(os.path.exists('./UVic Engr Study Groups/' + groupName + '.txt')):
         f = open('./UVic Engr Study Groups/' + groupName + '.txt', "r")
         #List of all users in group
         userList = f.read()
@@ -195,7 +210,7 @@ async def ping(ctx, groupName: str):
     authorUserID = ctx.message.author.id
 
     #Checks to see if the group exists
-    if(path.exists('./UVic Engr Study Groups/' + groupName + '.txt')):
+    if(os.path.exists('./UVic Engr Study Groups/' + groupName + '.txt')):
         
         f = open('./UVic Engr Study Groups/' + groupName + '.txt', "r")
         
@@ -216,7 +231,6 @@ async def ping(ctx, groupName: str):
                     try:
                     
                         user = ctx.guild.get_member(int(userID))
-                        
                         await user.send(f'{ctx.message.author} has pinged the ' + groupName + ' group in the ' + str(ctx.message.channel) + ' channel!')
                    
                     except:
@@ -235,8 +249,7 @@ async def ping(ctx, groupName: str):
 @bot.event
 async def on_ready():
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.listening, name="someones study group"))
-    
     print('The bot has been deployed')
+    print(f'We have logged in as {bot.user}')
     
-load_dotenv('.env')
-bot.run(os.getenv('BOT_TOKEN'))
+bot.run(Token)
