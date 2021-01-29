@@ -55,6 +55,7 @@ async def help(ctx):
 
 @bot.command()
 async def create(ctx, groupName: str):
+    groupName = groupName.lower()
 #Checks if the guild folder with the study groups in it exists, if not it creates one
     changeDirectory.change(str(ctx.message.guild.id))
 
@@ -80,6 +81,7 @@ async def create(ctx, groupName: str):
     
 @bot.command()
 async def delete(ctx, groupName: str):
+    groupName = groupName.lower()
     changeDirectory.change(str(ctx.message.guild.id))
     
     if ctx.message.channel.type is discord.ChannelType.private: 
@@ -152,6 +154,7 @@ async def list(ctx):
 
 @bot.command()
 async def join(ctx, groupName: str):
+    groupName = groupName.lower()
     changeDirectory.change(str(ctx.message.guild.id))
 
     if ctx.message.channel.type is discord.ChannelType.private: 
@@ -175,11 +178,12 @@ async def join(ctx, groupName: str):
             
     except FileNotFoundError:
         await ctx.send('The group ' + groupName + ' does not exist yet.')      
-    finally:
+    else:
         f.close()
 
 @bot.command()
 async def leave(ctx, groupName: str):
+    groupName = groupName.lower()
     changeDirectory.change(str(ctx.message.guild.id))
     
     if ctx.message.channel.type is discord.ChannelType.private: 
@@ -241,6 +245,7 @@ async def leave(ctx, groupName: str):
 
 @bot.command()
 async def ping(ctx, groupName: str):
+    groupName = groupName.lower()
     changeDirectory.change(str(ctx.message.guild.id))
 
     if ctx.message.channel.type is discord.ChannelType.private: 
