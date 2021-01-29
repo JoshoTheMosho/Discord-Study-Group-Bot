@@ -1,2 +1,7 @@
-UVic Engr Study Groups
-.env
+# Ignore everything
+*
+
+# But not these files...
+!.gitignore
+!bot.py
+!README.md
