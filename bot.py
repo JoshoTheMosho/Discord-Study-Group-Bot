@@ -22,6 +22,21 @@ bot = commands.Bot(command_prefix=',', description="This is a Study Group Bot", 
 #Customizable mod role as well as administrator override for deleting groups if possible
 
 
+class changeDirectory:
+    @staticmethod
+    def change(guildID: str):
+        try:
+            os.chdir(r'./' + guildID + '/')
+        except FileNotFoundError:
+            if(str(os.path.basename(os.getcwd())) != guildID):
+                print('os getcwd is ')
+                print(str(os.path.basename(os.getcwd())))
+                print('guildID is ')
+                print(guildID)
+                print("Creating Study Groups Folder...")
+                os.makedirs(r'./' + guildID + '/')
+                os.chdir(r'./' + guildID + '/')
+
 @bot.command()
 async def help(ctx):
     if ctx.message.channel.type is not discord.ChannelType.private: 
@@ -40,45 +55,41 @@ async def help(ctx):
 
 @bot.command()
 async def create(ctx, groupName: str):
+#Checks if the guild folder with the study groups in it exists, if not it creates one
+    changeDirectory.change(str(ctx.message.guild.id))
+
     #Blocks this command (And those below) from being used in DMs 
     if ctx.message.channel.type is discord.ChannelType.private: 
         await ctx.message.author.send(f'You cannot perform this command in a DM!')
         return
         
     authorID = ctx.message.author.id
-    guildID = str(ctx.message.guild.id)
     
-    #Checks if the guild folder with the study groups in it exists, if not it creates one
     #Then checks if the study group already exists. If so, they join it
+
     try:
-        f = open('./' + guildID + '/')
-
-    except FileNotFoundError:
-        os.makedirs(guildID)
-
+        f = open(groupName + '.txt', "x")
+    except FileExistsError:
+        await ctx.send('The group ' + groupName + ' already exists! You can join that group or create a new group name.')
+        return
+    else:
+        f.write(str(authorID) + '\n')
+        await ctx.send('<@' + str(authorID) + '> has created a new group: ' + groupName)
     finally:
-        try:
-            f = open('./' + guildID + '/' + groupName + '.txt', "x")
-        except FileExistsError:
-            await ctx.send('The group ' + groupName + ' already exists! You can join that group or create a new group name.')
-            return
-        else:
-            f.write(str(authorID) + '\n')
-            await ctx.send('<@' + str(authorID) + '> has created a new group: ' + groupName)
-        finally:
-            f.close()
+        f.close()
     
 @bot.command()
 async def delete(ctx, groupName: str):
+    changeDirectory.change(str(ctx.message.guild.id))
+    
     if ctx.message.channel.type is discord.ChannelType.private: 
         await ctx.message.author.send(f'You cannot perform this command in a DM!')
         return
         
     authorID = ctx.message.author.id
-    guildID = str(ctx.message.guild.id)
     
     try:
-        f = open('./' + guildID + '/' + groupName + '.txt')
+        f = open(groupName + '.txt')
         #This is the owner of the group
         leadUser = f.readline()
         f.close()
@@ -89,12 +100,12 @@ async def delete(ctx, groupName: str):
             
         #Moderators can override and delete the groups themselves
         if modRole in ctx.message.author.roles:
-            os.remove('./' + guildID + '/' + groupName + '.txt')
+            os.remove(groupName + '.txt')
             await ctx.send('Group ' + groupName + ' has been deleted by <@' + str(authorID) + '>')
                 
         #If the owner tries to delete the group, then it gets deleted
         elif(str(leadUser.strip()) == str(authorID)):
-            os.remove('./' + guildID + '/' + groupName + '.txt')
+            os.remove(groupName + '.txt')
             await ctx.send('Group ' + groupName + ' has been deleted by <@' + str(authorID) + '>')
             
         #If there is no owner, or its specified to be the mods, they will be able to delete the group. It will let regular users know to contact mods about it, and ping mods
@@ -110,24 +121,15 @@ async def delete(ctx, groupName: str):
    
 @bot.command()
 async def list(ctx):
+    changeDirectory.change(str(ctx.message.guild.id))
+
     if ctx.message.channel.type is discord.ChannelType.private: 
         await ctx.message.author.send(f'You cannot perform this command in a DM!')
         return
-        
-    guildID = str(ctx.message.guild.id)
-    
+            
     #Gets a list of all text files in the global directory
     #TO ADD: Seperate directories for each guild -- Current plans are usage on a single server so this can wait for now
 
-    # If the file doesn't exist, print to the terminal and create the folder
-    try:
-        os.chdir(r'./' + guildID + '/')
-    except FileNotFoundError:
-        print("Creating Study Groups Folder...")
-        os.makedirs(r'./' + guildID + '/')
-        os.chdir(r'./' + guildID + '/')
-
-    #Continue as normal
     #Make sure there isn't something funky or an empty folder
     try:
         myFiles = glob.glob('*.txt')
@@ -150,15 +152,16 @@ async def list(ctx):
 
 @bot.command()
 async def join(ctx, groupName: str):
+    changeDirectory.change(str(ctx.message.guild.id))
+
     if ctx.message.channel.type is discord.ChannelType.private: 
         await ctx.message.author.send(f'You cannot perform this command in a DM!')
         return
         
     authorID = ctx.message.author.id
-    guildID = str(ctx.message.guild.id)
 
     try:
-        f = open('./' + guildID + '/' + groupName + '.txt', "r")
+        f = open(groupName + '.txt', "r")
         #List of all users in group
         userList = f.read()
         
@@ -166,11 +169,10 @@ async def join(ctx, groupName: str):
             await ctx.send('You are already in the ' + groupName + ' group.')
         else:
             f.close()
-            f = open('./' + guildID + '/' + groupName + '.txt', "a")
+            f = open(groupName + '.txt', "a")
             f.write(str(authorID) + '\n')
             await ctx.send('You have successfully joined the ' + groupName + ' group.')
             
-        f.close()
     except FileNotFoundError:
         await ctx.send('The group ' + groupName + ' does not exist yet.')      
     finally:
@@ -178,15 +180,16 @@ async def join(ctx, groupName: str):
 
 @bot.command()
 async def leave(ctx, groupName: str):
+    changeDirectory.change(str(ctx.message.guild.id))
+    
     if ctx.message.channel.type is discord.ChannelType.private: 
         await ctx.message.author.send(f'You cannot perform this command in a DM!')
         return
         
     authorID = ctx.message.author.id
-    guildID = str(ctx.message.guild.id)
 
     try:
-        f = open('./' + guildID + '/' + groupName + '.txt')
+        f = open(groupName + '.txt')
         
         #This is the owner of the group
         leadUser = f.readline()
@@ -195,7 +198,7 @@ async def leave(ctx, groupName: str):
         #If the owner leaves the group, the mod team takes over
         if(str(leadUser.strip()) == str(authorID)):            
             
-            with open('./' + guildID + '/' + groupName + ".txt", "r") as f:
+            with open(groupName + ".txt", "r") as f:
                 lines = f.readlines()
 
                 lines # ['This is the first line.\n', 'This is the second line.\n']
@@ -204,13 +207,13 @@ async def leave(ctx, groupName: str):
 
                 lines # ["This is the line that's replaced.\n", 'This is the second line.\n']
 
-            with open('./' + guildID + '/' + groupName + ".txt", "w") as f:
+            with open(groupName + ".txt", "w") as f:
                 f.writelines(lines)
                 
             await ctx.send('Group owner <@' + str(authorID) + '> has left the ' + groupName + ' group. Only a moderator may delete the group now.')
             
         else:
-            f = open('./' + guildID + '/' + groupName + '.txt', 'r')
+            f = open(groupName + '.txt', 'r')
             userList = f.readlines()
             f.close()
             
@@ -220,13 +223,13 @@ async def leave(ctx, groupName: str):
                 if(str(authorID) == str(userID.strip())):
 
                     #Once they're found, remove them then exit
-                    f = open('./' + guildID + '/' + groupName + '.txt')
+                    f = open(groupName + '.txt')
                     output = []
                     for line in f:
                         if not str(authorID) in line:
                             output.append(line)
                     f.close()
-                    f = open('./' + guildID + '/' + groupName + '.txt', 'w')
+                    f = open(groupName + '.txt', 'w')
                     f.writelines(output)
                     await ctx.send('<@' + str(authorID) + '> has successfully been removed from the ' + groupName + ' group.')
                     return
@@ -235,23 +238,22 @@ async def leave(ctx, groupName: str):
             await ctx.send('You are not in the ' + groupName + ' group.')
     except IOError:
         await ctx.send('The group ' + groupName + ' does not exist.')
-    finally:
-        f.close()
 
 @bot.command()
 async def ping(ctx, groupName: str):
+    changeDirectory.change(str(ctx.message.guild.id))
+
     if ctx.message.channel.type is discord.ChannelType.private: 
         await ctx.message.author.send(f'You cannot perform this command in a DM!')
         return
     
     authorUserID = ctx.message.author.id
-    guildID = str(ctx.message.guild.id)
     guildName = ctx.message.guild.name
 
     #Checks to see if the group exists
     try:
         
-        f = open('./' + guildID + '/' + groupName + '.txt', "r")
+        f = open(groupName + '.txt', "r")
         
         #List of all users in group
         userList = f.readlines()
@@ -283,8 +285,6 @@ async def ping(ctx, groupName: str):
 
     except FileNotFoundError:
         await ctx.send('The group ' + groupName + ' does not exist.')
-    finally:
-        f.close()
 
 # Events
 @bot.event
