@@ -15,6 +15,13 @@ intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix=',', description="This is a Study Group Bot", intents=intents, help_command=None)
 
+#Availability command -
+# Adds a 1 or 0 to end of user ID for each study group they are in
+# Check availability command gives a number of 'available users'
+
+#Customizable mod role as well as administrator override for deleting groups if possible
+
+
 @bot.command()
 async def help(ctx):
     if ctx.message.channel.type is not discord.ChannelType.private: 
@@ -137,7 +144,7 @@ async def list(ctx):
         embed.add_field(name='Here is a full list of all study groups', value=allGroups[:-2], inline=False)
         await ctx.message.author.send(embed=embed)
         await ctx.send('A list of all study groups has been DMed to you.')
-    except FileNotFoundError:
+    except:
         await ctx.send(f'There are currently no study groups.')
         print("No groups/files inside folder")
 
